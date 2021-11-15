@@ -2,6 +2,12 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog as fdg
 from tkinter import messagebox as msg
+import ee
+import geemap as gmap
+
+# global constants
+SENSOR_NAME_ID = {'Sentinel-2 MSI (10m)': 'COPERNICUS/S2_SR',
+            'Sentinel-3 OLCI (300m)': 'COPERNICUS/S3/OLCI'}
 
 class TSEApp(tk.Tk):
     # constructor
@@ -18,7 +24,7 @@ class TSEApp(tk.Tk):
         self.toDate = tk.StringVar()
         self.GIFSpeed = tk.StringVar() 
         self.vis = {'True Color': tk.IntVar(), 'False Color': tk.IntVar()}
-        self.sensorOptions = ('Sentinel-2 MSI (10m)', 'Sentinel-3 OLCI (300m)')
+        self.sensorOptions = tuple(SENSOR_NAME_ID.keys())
         self.visOptions = list(self.vis.keys())
         self.outPath = ''
 
@@ -64,16 +70,54 @@ class TSEApp(tk.Tk):
         self.outPath = filePath
         self.selectedoutputDirLabel['text'] = filePath + '\n'
 
-
     def onSubmit(self):
         '''
         Start the process here, ping earth engine and process image composites on cloud and then download gifs
         '''
+        # curating monthly datelists
+        #==================================================================#
+        calendar = {1:31, 2:28, 3:31, 4:30, 5:31, 6:30, 7:31, 8:31, 9:30, 10:31, 11:30, 12:31}
+        startDate = self.fromDate.get()
+        endDate = self.toDate.get()
+        
+        startMonth = int(startDate.split('-')[1])
+        endMonth = int(endDate.split('-')[1])
+
+        startYear = int(startDate.split('-')[0])
+        endYear = int(endDate.split('-')[0])
+        
+        span = 12*(endYear - startYear - 1) + (13 - startMonth) + endMonth
+
+        startDateList = []
+        endDateList = []
+
+        offset = 0
+        for i in range(span):
+            year = str(startYear)
+            month = str(startMonth + offset) if (startMonth + offset) > 9 else '0' + str(startMonth + offset)
+            lastMonthDay = str(calendar[startMonth + offset] + 1) if (startMonth == 2 and not(startYear%4) and not(startYear%100) and not(startYear%400)) else str(calendar[startMonth + offset])
+            startDateList.append(year + '-' + month + '-01')
+            endDateList.append(year + '-' + month + '-' + lastMonthDay)
+
+            offset += 1
+
+            if (startMonth + offset -1) == 12:
+                startYear += 1
+                startMonth = 1
+                offset = 0
+
+        # restting the first and last days of the span
+        startDateList[0] = startDate
+        endDateList[-1] = endDate 
+        #==================================================================#
+        print('startdates', len(startDateList))
+        print(startDateList)
+        print('enddates', len(endDateList))
+        print(endDateList)
         print(self.sensorName.get())
         print(self.roiFilePath)
         print(self.GIFSpeed.get())
-        print(self.fromDate.get())
-        print(self.toDate.get())
+
         for key in self.vis.keys():
             self.vis[key] = self.vis[key].get()
         print(self.vis)
