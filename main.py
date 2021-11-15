@@ -2,8 +2,6 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog as fdg
 from tkinter import messagebox as msg
-import ee
-import geemap as gmap
 
 # global constants
 SENSOR_NAME_ID = {'Sentinel-2 MSI (10m)': 'COPERNICUS/S2_SR',
