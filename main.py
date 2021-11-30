@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog as fdg
 from tkinter import messagebox as msg
+from eeProcess import EarthEngine
 
 # global constants
 SENSOR_NAME_ID = {'Sentinel-2 MSI (10m)': 'COPERNICUS/S2_SR',
@@ -108,6 +109,7 @@ class TSEApp(tk.Tk):
         startDateList[0] = startDate
         endDateList[-1] = endDate 
         #==================================================================#
+
         print('startdates', len(startDateList))
         print(startDateList)
         print('enddates', len(endDateList))
@@ -121,6 +123,11 @@ class TSEApp(tk.Tk):
         print(self.vis)
         print(self.outPath)
 
+        # Earth Engine Tasks
+        #==================================================================#
+        ee = EarthEngine(SENSOR_NAME_ID[self.sensorName.get()], startDateList, endDateList, self.roiFilePath, self.vis)
+        ee.createMonthlyImages()
+        #==================================================================#
 
     def createWidgets(self):
         '''
