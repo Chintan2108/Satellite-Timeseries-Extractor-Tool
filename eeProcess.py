@@ -65,7 +65,14 @@ class EarthEngine:
                 ccd = chla.expression('(4989.55*chla) - 131742', {'chla':chla}).select(['constant'],['ccd'])
                 print(ccd)
             elif self.sensor == SENTINEL_3:
-                ss_681 = 
+                ss_681 = bands[4].expression('b10 - b8 - (b11 - b8)*0.3636', {'b10': bands[4], 'b8': bands[3], 'b11':bands[5]})
+                ci_681 = ss_681.expression('-1*ss_681', {'ss_681':ss_681}).select(['constant'],['CyanoIndex'])
+                ss_665 = bands[4].expression('b8 - b7 - (b7 - b10)*0.7377', {'b8': bands[3], 'b7': bands[2], 'b10': bands[4]})
+                ci_665 = ss_665.expression('-1*ss_665', {'ss_665':ss_665}).select(['constant'],['CIFlag'])
+                pc_mask = ci_665.gt(0)
+                ccd = ci_681.expression('1.0*100000000*ci', {'ci':ci_681}).select(['constant'],['ccd'])
+                ccd = ccd.multiply(pc_mask)
+                print(ccd)
                 
 
             
