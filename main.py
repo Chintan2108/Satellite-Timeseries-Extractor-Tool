@@ -3,6 +3,8 @@ from tkinter import ttk
 from tkinter import filedialog as fdg
 from tkinter import messagebox as msg
 from eeProcess import EarthEngine
+from postProcess import PostProcess
+import time
 
 # global constants
 SENSOR_NAME_ID = {'Sentinel-2 MSI (10m)': 'COPERNICUS/S2_SR',
@@ -30,7 +32,7 @@ class TSEApp(tk.Tk):
         # dynamic widgets
         self.selectedROILabel = ttk.Label(self, foreground='red', text='')
         self.selectedoutputDirLabel = ttk.Label(self, foreground='red', text='')
-        self.statusLabel = ttk.Label(self, foreground='blue', text='')
+        self.statusLabel = ttk.Label(self, foreground='blue', text='Waiting for user input')
 
         # create widgets
         self.createWidgets()
@@ -73,6 +75,8 @@ class TSEApp(tk.Tk):
         '''
         Start the process here, ping earth engine and process image composites on cloud and then download gifs
         '''
+        self.statusLabel['text']= 'Request Submitted!'
+
         # curating monthly datelists
         #==================================================================#
         calendar = {1:31, 2:28, 3:31, 4:30, 5:31, 6:30, 7:31, 8:31, 9:30, 10:31, 11:30, 12:31}
@@ -110,23 +114,32 @@ class TSEApp(tk.Tk):
         endDateList[-1] = endDate 
         #==================================================================#
 
-        print('startdates', len(startDateList))
-        print(startDateList)
-        print('enddates', len(endDateList))
-        print(endDateList)
-        print(self.sensorName.get())
-        print(self.roiFilePath)
-        print(self.GIFSpeed.get())
-
         for key in self.vis.keys():
             self.vis[key] = self.vis[key].get()
         print(self.vis)
-        print(self.outPath)
 
         # Earth Engine Tasks
         #==================================================================#
+        self.statusLabel['text'] = 'Quering Earth Engine . . .'
         ee = EarthEngine(SENSOR_NAME_ID[self.sensorName.get()], startDateList, endDateList, self.roiFilePath, self.vis)
+        time.sleep(3)
+        self.statusLabel['text'] = 'Connected!'
+        time.sleep(2)
+        self.statusLabel['text'] = 'Creating Monthly Composites . . .'
         ee.createMonthlyImages()
+        time.sleep(5)
+        #==================================================================#
+
+        # Local Post-Processing Tasks
+        #==================================================================#
+        self.statusLabel['text'] = 'Downloading data . . .'
+        time.sleep(3)
+        self.statusLabel['text'] = 'Creating GIF and plotting timeseries . . .'
+        time.sleep(2)
+        pp = PostProcess(ee.ccdImages, ee.ccdValues, self.GIFSpeed.get(), self.outPath)
+        pp.createGIF()
+        pp.createTSPlot()
+        self.statusLabel['text'] = 'Finished!'
         #==================================================================#
 
     def createWidgets(self):

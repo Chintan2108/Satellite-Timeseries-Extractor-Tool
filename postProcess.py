@@ -45,7 +45,7 @@ class PostProcess:
         Reads the ccd values and saves a timeseries plot 
         '''
         # read ccd values
-        df = pd.read(self.ccdValues)
+        df = pd.read_csv(self.ccdValues)
 
         # plot the timeseries
         ax = df.plot(df.keys()[0], df.keys()[1])
