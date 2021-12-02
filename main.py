@@ -136,7 +136,7 @@ class TSEApp(tk.Tk):
         time.sleep(3)
         self.statusLabel['text'] = 'Creating GIF and plotting timeseries . . .'
         time.sleep(2)
-        pp = PostProcess(ee.ccdImages, ee.ccdValues, self.GIFSpeed.get(), self.outPath)
+        pp = PostProcess(ee.ccdImages, ee.ccdValues, int(self.GIFSpeed.get()), self.outPath)
         pp.createGIF()
         pp.createTSPlot()
         self.statusLabel['text'] = 'Finished!'
