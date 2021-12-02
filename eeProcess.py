@@ -1,9 +1,5 @@
-from tkinter import Image
 import ee
-from ee.imagecollection import ImageCollection
-import numpy as np
 import geemap as gmap
-import geopandas as gpd
 
 ee.Initialize()
 
@@ -34,36 +30,41 @@ class EarthEngine:
         self.sensor = sensor
         self.startDates = startDatelist
         self.endDates = endDatelist
-        self.fp = roi
+        self.ccdImages = './local/utah/'
+        self.ccdValues = './local/utah/ccd.csv'
         self.shapeFile = gmap.shp_to_ee(roi)
         self.monthlyMedianImagesCCD = []
         self.TCCFlag = visParams['True Color']
         self.FCCFlag = visParams['False Color']
-        self.monthlyMedianImagesTCC = []
-        self.monthlyMedianImagesFCC = []
     
     def createMonthlyImages(self):
         '''
         This function creates a list of monthly median images based on the datelist and region of interest
         '''
         for i in range(len(self.startDates)):
-            site = self.ImageCollection.filterBounds(self.shapeFile).filterDate(self.startDates[i], self.endDates[i])
+            site = self.ImageCollection.filterBounds(self.shapeFile).filterDate(self.startDates[i], self.endDates[i]).select(BAND_NAMES[self.sensor])
             site = site.median()
+
+            if self.sensor == SENTINEL_3:
+                bandCast = {}
+                for key in BAND_NAMES[self.sensor]:
+                    bandCast[key] = 'int'
+                site = site.cast(bandCast, BAND_NAMES[self.sensor])
 
             # atmospheric correction 
             bands = []
-            for i in range(len(BAND_NAMES[self.sensor])):
-                band = site.select(BAND_NAMES[self.sensor][i]).multiply(CORRECTION_CONSTANTS_MUL[self.sensor][i]).add(CORRECTION_CONSTANTS_ADD[self.sensor][i])
+            for i2 in range(len(BAND_NAMES[self.sensor])):
+                band = site.select(BAND_NAMES[self.sensor][i2]).multiply(CORRECTION_CONSTANTS_MUL[self.sensor][i2]).add(CORRECTION_CONSTANTS_ADD[self.sensor][i2])
                 bands.append(band)
-            print(bands)
-
+            # have a boa surface reflectance image
             image = ee.Image(bands)
+
+            # calculate ccd 
             ccd = None
             if self.sensor == SENTINEL_2:
                 ndci = image.normalizedDifference(['B5','B4']).select(['nd'],['ndvi'])
                 chla = ndci.expression('14.039 + (86.115*ndci) + (194.325 * (ndci*ndci))', {'ndci': ndci}).select(['constant'],['chla'])
                 ccd = chla.expression('(4989.55*chla) - 131742', {'chla':chla}).select(['constant'],['ccd'])
-                print(ccd)
             elif self.sensor == SENTINEL_3:
                 ss_681 = bands[4].expression('b10 - b8 - (b11 - b8)*0.3636', {'b10': bands[4], 'b8': bands[3], 'b11':bands[5]})
                 ci_681 = ss_681.expression('-1*ss_681', {'ss_681':ss_681}).select(['constant'],['CyanoIndex'])
@@ -72,10 +73,5 @@ class EarthEngine:
                 pc_mask = ci_665.gt(0)
                 ccd = ci_681.expression('1.0*100000000*ci', {'ci':ci_681}).select(['constant'],['ccd'])
                 ccd = ccd.multiply(pc_mask)
-                print(ccd)
-                
 
-            
-        
-# s3 = ee.ImageCollection('COPERNICUS/S2_SR').filterDate()
-# print(s3)
+            self.monthlyMedianImagesCCD.append(ccd)
