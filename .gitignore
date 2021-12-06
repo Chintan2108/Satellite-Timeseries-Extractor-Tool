@@ -1,2 +1,6 @@
 local/
 .vs/
+__pycache__/
+build/
+dist/
+main.spec
