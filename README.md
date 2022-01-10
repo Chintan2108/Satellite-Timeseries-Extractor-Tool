@@ -1,5 +1,5 @@
 # Satellite-Timeseries-Extractor-Tool
-## An interactive python-based tool to download time-series data for all sensors available on Google Earth Engine's data catalog.
+## An interactive python-based tool to download time-series data for all sensors available on Google Earth Engine's data catalog. Refer [Project Report](https://github.com/Chintan2108/Satellite-Timeseries-Extractor-Tool/blob/main/Report.pdf) for detalied info
 
 ## Here is an example of time-series of cyanobacterial harmful algal blooms at the Utah Lake, Utah, extracted using this tool for the Sentinel-2 MSI satellite sensor:
 
